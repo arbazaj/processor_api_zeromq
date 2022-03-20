@@ -1,8 +1,8 @@
 var zmq = require('zeromq')
     , sock = zmq.socket('pub');
 
-const ip = "172.105.47.41";
-const port = 7890;
+const ip = "172.105.41.62";
+const port = 5577;
 const address = `tcp://${ip}:${port}`;
 sock.connect(address);
 console.log('Publisher bound to: ', address);

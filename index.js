@@ -22,7 +22,7 @@ app.post("/impressions", (req, res) => {
             succces: true,
             message: "Success",
         });
-    } catch (error) {
+    } catch (e) {
         res.status(e.statusCode || 500).json({
             succces: false,
             message: e.statusCode ? e.message : "Something went wrong"

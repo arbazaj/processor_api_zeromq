@@ -12,6 +12,7 @@
   "dependencies": {
     "cors": "^2.8.5",
     "express": "^4.17.3",
+    "mongoose": "^6.2.8",
     "underscore": "^1.13.2",
     "zeromq": "^5.2.8"
   }

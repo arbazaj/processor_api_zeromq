@@ -17,6 +17,7 @@
     "express": "^4.17.3",
     "mongoose": "^6.2.8",
     "redis": "^4.0.6",
+    "tunnel-ssh": "^4.1.6",
     "underscore": "^1.13.2",
     "zeromq": "^5.2.8"
   }

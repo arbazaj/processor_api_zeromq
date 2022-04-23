@@ -1,13 +1,16 @@
 var zmq = require('zeromq')
 , sock = zmq.socket('pub');
 
-console.log(`tcp://${process.env.TCP_IP}:${process.env.TCP_PORT}`);
+const address = `tcp://${process.env.TCP_IP}:${process.env.TCP_PORT}`;
 
-sock.bindSync(`tcp://${process.env.TCP_IP}:${process.env.TCP_PORT}`);
+sock.bindSync(address);
 
-console.log('Publisher bound to port: ', process.env.TCP_PORT);
+console.log('Publisher bound to port: ', address);
 
-const publish = (topic, data) => sock.send([topic, JSON.stringify(data)]);
+const publish = (topic, data) => {
+  console.log(address);
+  sock.send([topic, JSON.stringify(data)])
+};
 
 module.exports = {
   publish

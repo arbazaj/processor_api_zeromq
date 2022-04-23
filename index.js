@@ -1,10 +1,14 @@
+(() => {
+    require("dotenv").config({ path: `./.${process.env.NODE_ENV || "local"}.env` });
+})();
+
 const express = require("express");
 const cors = require("cors");
 const app = express();
 const _ = require("underscore");
-// const pubber = require("./pubber");
-const db = require('./mongoose');
+const db = require('./helpers/mongoose');
 const mongoose = require('mongoose');
+const { publish } = require("./helpers/zeromq-pubber");
 
 app.use(cors());
 app.use(express.json())
@@ -26,6 +30,7 @@ app.post("/impressions", async (req, res) => {
         }, {
             upsert: true
         });
+        await publish("impressions", body);
         console.log("publish successfully");
         res.status(200).json({
             succces: true,

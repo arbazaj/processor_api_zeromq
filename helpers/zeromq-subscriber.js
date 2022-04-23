@@ -13,6 +13,17 @@ var config = {
     localPort: 7890
 };
 
+// var config = {
+//     username: 'arbaz',
+//     password: 'Arbaz098',
+//     host: "172.105.51.16",
+//     port: 22,
+//     dstHost: '172.105.51.16',
+//     dstPort: 7890,
+//     localHost: '127.0.0.1',
+//     localPort: 7890
+// };
+
 var tunnel = require('tunnel-ssh');
 tunnel(config, function (error, server) {
     console.log(error);

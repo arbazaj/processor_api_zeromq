@@ -9,7 +9,6 @@ const cors = require("cors");
 const app = express();
 const { redisClient } = require("./helpers/redis");
 const { findRandom } = require("./helpers/util");
-const { sequelize } = require("./helpers/pg-connection");
 app.use(cors());
 app.use(express.json());
 
@@ -32,9 +31,5 @@ app.get("/bids", async (req, res) => {
     }
 });
 const PORT = 4000;
+app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
 
-sequelize.sync({ force: false }).then(() => {
-    app.listen(PORT, () => console.log(`Listening on port ${PORT}`));
-}).catch(e => {
-    console.log(e);
-});

@@ -10,18 +10,11 @@ const app = express();
 const { redisClient } = require("./helpers/redis");
 const { findRandom } = require("./helpers/util");
 const { sequelize } = require("./helpers/pg-connection");
-const DailyReportPublisherLevel = require("./models/pg/daily-report-publisher-level");
 app.use(cors());
 app.use(express.json());
 
 app.get("/bids", async (req, res) => {
     try {
-        await DailyReportPublisherLevel.increment(
-            'total_bid_request',
-            {
-                by: 1, where: { publisher_id: req.body.publisher_id }
-            } 
-        );
         const key = findRandom(4);
         const resp = await redisClient.get(`${key}`);
         if (resp) {
@@ -36,21 +29,6 @@ app.get("/bids", async (req, res) => {
             succces: false,
             message: e.statusCode ? e.message : "Something went wrong"
         });
-    } finally {
-        try {
-            await DailyReportPublisherLevel.increment(
-                'total_bid_response',
-                {
-                    by: 1, where: { publisher_id: req.body.publisher_id }
-                } 
-            );
-        } catch (e) {
-            console.log(e);
-            res.status(e.statusCode || 500).json({
-                succces: false,
-                message: e.statusCode ? e.message : "Something went wrong"
-            });
-        }
     }
 });
 const PORT = 4000;

@@ -29,11 +29,8 @@ var config = {
   localPort: process.env.TCP_PORT
 };
 
-console.log(config);
-
 var tunnel = require('tunnel-ssh');
 tunnel(config, function (error, server) {
-  console.log("***********");
   server.on('error', function (err) {
     console.log(err);
     console.log("========");

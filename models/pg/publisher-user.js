@@ -16,7 +16,7 @@ Users.init({
   }
 }, {
   sequelize,
-  tableName: "users",
+  tableName: "publisher_users",
   timestamps: true,
   createdAt: "created_at",
   updatedAt: "updated_at"

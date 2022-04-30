@@ -21,8 +21,6 @@ app.post("/impressions", async (req, res) => {
             e.statusCode = 400;
             throw e;
         }
-        console.log(body);
-        // pubber.publish("impressions", body);
         await mongoose.connection.db.collection("impressions").updateOne({
             impression_id: body.impression_id
         }, {

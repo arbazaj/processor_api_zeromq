@@ -29,15 +29,20 @@ var config = {
   localPort: process.env.TCP_PORT
 };
 
+console.log(config);
+
 var tunnel = require('tunnel-ssh');
 tunnel(config, function (error, server) {
+  console.log("***********");
   server.on('error', function (err) {
     console.log(err);
+    console.log("========");
   });
   const ip = "127.0.0.1";
   const port = process.env.TCP_PORT;
   const address = `tcp://${ip}:${port}`;
   sock.connect(address);
+  console.log("connected---------");
   sock.subscribe('impressions');
   console.log('Subscriber connected to', address);
   sock.on('message', async function (topic, message) {

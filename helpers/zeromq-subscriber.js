@@ -31,6 +31,7 @@ var config = {
 
 var tunnel = require('tunnel-ssh');
 tunnel(config, function (error, server) {
+  console.log(error);
   server.on('error', function (err) {
     console.log(err);
     console.log("========");

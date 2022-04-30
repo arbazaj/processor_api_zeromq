@@ -3,9 +3,9 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../../helpers/pg-connection");
 
-class PublisherUsers extends Model { }
+class PublisherAppUsers extends Model { }
 
-PublisherUsers.init({
+PublisherAppUsers.init({
   user_id : {
     type: DataTypes.STRING,
     primaryKey: true
@@ -13,13 +13,17 @@ PublisherUsers.init({
   publisher_id: {
     type: DataTypes.STRING,
     primaryKey: true
+  },
+  app_id: {
+    type: DataTypes.STRING,
+    primaryKey: true
   }
 }, {
   sequelize,
-  tableName: "publisher_users",
+  tableName: "publisher_app_users",
   timestamps: true,
   createdAt: "created_at",
   updatedAt: "updated_at"
 });
 
-module.exports = PublisherUsers;
+module.exports = PublisherAppUsers;

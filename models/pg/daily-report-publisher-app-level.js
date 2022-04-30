@@ -3,9 +3,9 @@
 const { DataTypes, Model } = require("sequelize");
 const { sequelize } = require("../../helpers/pg-connection");
 
-class DailyReportPublisherLevel extends Model { }
+class DailyReportPublisherAppLevel extends Model { }
 
-DailyReportPublisherLevel.init({
+DailyReportPublisherAppLevel.init({
   publisher_id: {
     type: DataTypes.STRING(255),
     primaryKey: true
@@ -88,4 +88,4 @@ DailyReportPublisherLevel.init({
   updatedAt: "updated_at"
 });
 
-module.exports = DailyReportPublisherLevel;
+module.exports = DailyReportPublisherAppLevel;

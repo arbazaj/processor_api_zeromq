@@ -2,23 +2,14 @@ var zmq = require('zeromq')
   , sock = zmq.socket('sub');
 
 const DailyReportPublisherLevel = require("../models/pg/daily-report-publisher-level");
+const DailyReportPublisherAppLevel = require("../models/pg/daily-report-publisher-app-level");
 const { sequelize } = require("./pg-connection");
-const Users = require("../models/pg/publisher-user");
+const PublisherUsers = require("../models/pg/publisher-user");
+const PublisherAppUsers = require("../models/pg/publisher-app-user");
 const BidRequest = require("../models/pg/bid-request");
 const BidResponse = require("../models/pg/bid-response");
 
-// var config = {
-//   username: 'arbaaz',
-//   password: 'Arbaaz@321',
-//   host: "172.105.47.41",
-//   port: 22,
-//   dstHost: '172.105.47.41',
-//   dstPort: process.env.TCP_PORT,
-//   localHost: '127.0.0.1',
-//   localPort: process.env.TCP_PORT
-// };
-
-var config = {
+const config = {
   username: 'arbaz',
   password: 'Arbaz098',
   host: process.env.TCP_IP,
@@ -29,9 +20,30 @@ var config = {
   localPort: process.env.TCP_PORT
 };
 
+const fieldMappingConfig = {
+  bid_request_id: () => "total_bid_request",
+  bid_response_id: () => "total_bid_response",
+  event_name: (event) => {
+    const eventFieldMapping = {
+      start: "total_start_impression",
+      "first quartile": "total_first_quartile_impression",
+      "second quartile": "total_second_quartile_impression",
+      "third quartile": "total_third_quartile_impression",
+      complete: "total_complete_impression",
+      mute: "total_mute",
+      click: "total_click",
+      pause: "total_pause",
+      play: "total_play"
+    };
+    return eventFieldMapping[event.toLowerCase()];
+  }
+};
+
 var tunnel = require('tunnel-ssh');
 tunnel(config, function (error, server) {
-  console.log(error);
+  if (error) {
+    console.log(error);
+  }
   server.on('error', function (err) {
     console.log(err);
     console.log("========");
@@ -50,6 +62,9 @@ tunnel(config, function (error, server) {
         const data = JSON.parse(message.toString());
         if (data.publisher_id) {
           await handleDailyReportPublisherLevel(data);
+          if (data.app_id) {
+            await handleDailyReportPublisherAppLevel(data);
+          }
         }
       } catch (e) {
         console.log(e);
@@ -61,36 +76,17 @@ tunnel(config, function (error, server) {
 
 const handleDailyReportPublisherLevel = async (data) => {
   const where = { publisher_id: data.publisher_id };
-  let exists = await DailyReportPublisherLevel.findOne({
+  let existingReport = await DailyReportPublisherLevel.findOne({
     where,
     attributes: ['publisher_id']
   });
-  console.log(JSON.stringify(exists, null, 2));
-  if (!exists) {
-    exists = await DailyReportPublisherLevel.create({ publisher_id: data.publisher_id });
+  if (!existingReport) {
+    existingReport = await DailyReportPublisherLevel.create({ publisher_id: data.publisher_id });
   }
   const incrementFields = [];
-  const config = {
-    bid_request_id: () => "total_bid_request",
-    bid_response_id: () => "total_bid_response",
-    event_name: (event) => {
-      const eventFieldMapping = {
-        start: "total_start_impression",
-        "first quartile": "total_first_quartile_impression",
-        "second quartile": "total_second_quartile_impression",
-        "third quartile": "total_third_quartile_impression",
-        complete: "total_complete_impression",
-        mute: "total_mute",
-        click: "total_click",
-        pause: "total_pause",
-        play: "total_play"
-      };
-      return eventFieldMapping[event.toLowerCase()];
-    }
-  };
   Object.keys(data).forEach(key => {
-    if (typeof config[key] === "function") {
-      const field = config[key](data[key]);
+    if (typeof fieldMappingConfig[key] === "function") {
+      const field = fieldMappingConfig[key](data[key]);
       if (field) {
         incrementFields.push(field);
       }
@@ -105,20 +101,20 @@ const handleDailyReportPublisherLevel = async (data) => {
     }
     const promises = [];
     if (data.price) {
-      promises.push(DailyReportPublisherLevel.increment("total_revenue_impressions",
+      promises.push(existingReport.increment("total_revenue_impressions",
         {
           by: (+data.price / 1000), where, transaction: t
         }
       ));
     }
     if (data.user_id) {
-      promises.push(Users.upsert({
+      promises.push(PublisherUsers.upsert({
         user_id: data.user_id,
         publisher_id: data.publisher_id
       }, {
         transaction: t
       }));
-      const existingUser = await Users.findOne({
+      const existingUser = await PublisherUsers.findOne({
         where: {
           user_id: data.user_id,
           publisher_id: data.publisher_id
@@ -152,14 +148,103 @@ const handleDailyReportPublisherLevel = async (data) => {
       }));
     }
     if (incrementFields.length) {
-      promises.push(DailyReportPublisherLevel.increment(incrementFields,
+      promises.push(existingReport.increment(incrementFields,
         {
           by: 1, where, transaction: t
         }
       ));
     }
-    promises.push(DailyReportPublisherLevel.update(updateData, {
+    promises.push(existingReport.update(updateData, {
       where, transaction: t
+    }));
+    await Promise.all(promises);
+  });
+}
+
+const handleDailyReportPublisherAppLevel = async (data) => {
+  const where = {
+    publisher_id: data.publisher_id,
+    app_id: data.app_id
+  };
+  let existingReport = await DailyReportPublisherAppLevel.findOne({
+    where,
+    attributes: ['publisher_id', 'app_id']
+  });
+  if (!existingReport) {
+    existingReport = await DailyReportPublisherAppLevel.create({
+      publisher_id: data.publisher_id,
+      app_id: data.app_id
+    });
+  }
+  const incrementFields = [];
+  Object.keys(data).forEach(key => {
+    if (typeof fieldMappingConfig[key] === "function") {
+      const field = fieldMappingConfig[key](data[key]);
+      if (field) {
+        incrementFields.push(field);
+      }
+    }
+  });
+  await sequelize.transaction(async t => {
+    const updateData = {
+      timestamp: data.timestamp
+    }
+    if (data.currency) {
+      updateData.currency = data.currency;
+    }
+    const promises = [];
+    if (data.price) {
+      promises.push(existingReport.increment("total_revenue_impressions",
+        {
+          by: (+data.price / 1000), where, transaction: t, returning: false
+        }
+      ));
+    }
+    if (data.user_id) {
+      promises.push(PublisherAppUsers.upsert({
+        user_id: data.user_id,
+        publisher_id: data.publisher_id,
+        app_id: data.app_id
+      }, {
+        returning: false,
+        transaction: t
+      }));
+      const existingUser = await PublisherAppUsers.findOne({
+        where: {
+          user_id: data.user_id,
+          publisher_id: data.publisher_id,
+          app_id: data.app_id
+        }
+      }, {
+        attributes: ["user_id"]
+      });
+      if (!existingUser) {
+        incrementFields.push("unique_users_count");
+      }
+    }
+    // if (data.bid_request_id) {
+    //   promises.push(BidRequest.upsert({
+    //     bid_request_id: data.bid_request_id
+    //   }, {
+    //     transaction: t
+    //   }));
+    // }
+    // if (data.bid_response_id) {
+    //   promises.push(BidResponse.upsert({
+    //     bid_response_id: data.bid_response_id
+    //   }, {
+    //     transaction: t
+    //   }));
+    // }
+    if (incrementFields.length) {
+      promises.push(existingReport.increment(incrementFields,
+        {
+          by: 1, where, transaction: t, returning: false
+        }
+      ));
+    }
+    promises.push(existingReport.update(updateData, {
+      where, transaction: t, returning: false
     }));
     await Promise.all(promises);
   });

@@ -9,7 +9,7 @@ console.log('Publisher bound to port: ', address);
 
 const publish = (topic, data) => {
   console.log(address);
-  sock.send([topic, JSON.stringify(data)])
+  return sock.send([topic, JSON.stringify(data)])
 };
 
 module.exports = {
